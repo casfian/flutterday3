@@ -1,0 +1,302 @@
+//Sample to create a simple Attendance App
+
+//Pubspec.yaml
+//Add dependencies as below
+
+dependencies:
+  flutter:
+    sdk: flutter
+  qr_flutter: ^3.1.0
+  barcode_scan: ^1.0.0
+
+
+
+//main.dart
+import 'package:flutter/material.dart';
+import 'package:qrscandemo/home.dart';
+import 'package:qrscandemo/qrcreate.dart';
+import 'package:qrscandemo/qrscan.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Home(),
+      //route
+      routes: <String, WidgetBuilder>{
+        'qrcreate': (BuildContext context) => CreateQRCode(),
+        'qrscan': (BuildContext context) => ScanQRCode(),
+      },
+    );
+  }
+}
+
+
+
+
+
+
+//Home.dart
+import 'package:flutter/material.dart';
+ 
+class Home extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Home',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Attendance App'),
+        ),
+        body: Center(
+          child: Container(
+            child: Column(
+              children: <Widget>[
+                RaisedButton(
+                  child: Text('Create QRCode'),
+                  onPressed: () {
+                    Navigator.pushNamed(context, 'qrcreate');
+                  },
+                ),
+                RaisedButton(
+                  child: Text('Scan QRCode'),
+                  onPressed: () {
+                    Navigator.pushNamed(context, 'qrscan');
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+//qrcreate.dart
+//Create QRCode
+import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+
+class CreateQRCode extends StatefulWidget {
+  @override
+  _CreateQRCodeState createState() => _CreateQRCodeState();
+}
+
+class _CreateQRCodeState extends State<CreateQRCode> {
+  //Declare variable
+  String myQRCode = '1234567890';
+  final _qrcodeController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text('Create QRCode'),
+        ),
+        body: Center(
+          child: Container(
+            margin: EdgeInsets.fromLTRB(105, 10, 105, 10),
+            child: Column(
+              children: <Widget>[
+                QrImage(
+                  data: myQRCode,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+                TextField(controller: _qrcodeController,
+                decoration: InputDecoration(
+              border: OutlineInputBorder(),
+            ),),
+                RaisedButton(
+                  color: Colors.blue,
+                  child: Text('Generate New QRCode', style: TextStyle(color: Colors.white),),
+                  onPressed: () {
+                    setState(() {
+                      myQRCode = _qrcodeController.text;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+    );
+  }
+}
+
+
+
+
+
+//qrscan.dart
+//Scan QRCode
+import 'dart:async';
+import 'package:barcode_scan/barcode_scan.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class ScanQRCode extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Scan QR'),
+      ),
+      body: ReadQRCode(),
+    );
+  }
+}
+
+class ReadQRCode extends StatefulWidget {
+  @override
+  _ReadQRCodeState createState() => new _ReadQRCodeState();
+}
+
+class _ReadQRCodeState extends State<ReadQRCode> {
+  String barcode = "";
+
+  @override
+  initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Text(
+              barcode,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 25.0),
+            ),
+          ),
+          SizedBox(height: 20.0),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 60.0, vertical: 5.0),
+            child: FlatButton(
+                color: Colors.lightGreen,
+                textColor: Colors.white,
+                splashColor: Colors.blueGrey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                onPressed: scanQR,
+                child: Text('SCAN QR')),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 60.0, vertical: 5.0),
+            child: OutlineButton(
+                color: Colors.lightBlue,
+                textColor: Colors.blueGrey[100],
+                splashColor: Colors.blueGrey[100],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                onPressed: () {
+                  barcode = "";
+                  Navigator.pop(context);
+                },
+                child: Text('Back')),
+          ),
+          SizedBox(
+            height: 40,
+          ),
+        ],
+      ),
+    ));
+  }
+
+//functions
+  Future scanQR() async {
+    try {
+      String barcode = await BarcodeScanner.scan();
+      setState(() => this.barcode = barcode);
+      print('Successfully scanned!');
+      
+      //toast here
+      final snackBar = SnackBar(
+        content: Text('Successfully Saved Attendance!'),
+      );
+
+      // Find the Scaffold in the Widget tree and use it to show a SnackBar!
+      Scaffold.of(context).showSnackBar(snackBar);
+    } on PlatformException catch (e) {
+      if (e.code == BarcodeScanner.CameraAccessDenied) {
+        setState(() {
+          this.barcode = 'The user did not grant the camera permission!';
+        });
+      } else {
+        setState(() => this.barcode = 'Unknown error: $e');
+      }
+    } on FormatException {
+      setState(() => this.barcode =
+          'null (User returned using the "back"-button before scanning anything. Result)');
+    } catch (e) {
+      setState(() => this.barcode = 'Unknown error: $e');
+    }
+  }
+
+  
+}
+
+
+
+
+//==========================================================
+//If Error See This how to solve
+Android #
+
+For Android, you must do the following before you can use the plugin:
+
+Add the camera permission to your AndroidManifest.xml
+
+<uses-permission android:name="android.permission.CAMERA" />
+
+Add the BarcodeScanner activity to your AndroidManifest.xml. Do NOT modify the name.
+
+<activity android:name="com.apptreesoftware.barcodescan.BarcodeScannerActivity"/>
+
+This plugin is written in Kotlin. Therefore, you need to add Kotlin support to your project. See installing the Kotlin plugin.
+Edit your project-level build.gradle file to look like this:
+
+buildscript {
+    ext.kotlin_version = '1.2.31'
+    ...
+    dependencies {
+        ...
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+...
+Edit your app-level build.gradle file to look like this:
+
+apply plugin: 'kotlin-android'
+...
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+    ...
+}
+Now you can depend on the barcode_scan plugin in your pubspec.yaml file:
+
+dependencies:
+  ...
+  barcode_scan: ^0.0.3
+Click "Packages get" in Android Studio or run flutter packages get in your project folder.
+
+iOS #
+
+To use on iOS, you must add the the camera usage description to your Info.plist
+
+<key>NSCameraUsageDescription</key>
+<string>Camera permission is required for barcode scanning.</string>
