@@ -20,10 +20,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      //notify povider
       home: ChangeNotifierProvider<MyCounter>(
         create: (_) => MyCounter(),
         child: MyHomePage(title: 'Flutter Demo Home Page'),
       ),
+      //end notifying
     );
   }
 }
@@ -71,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
           FloatingActionButton(
             onPressed: () => counterModel.decrementCounter(),
             tooltip: 'Decrease',
-            child: Icon(Icons.add),
+            child: Icon(Icons.delete_outline),
           ),
         ],
       ),
@@ -79,6 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+//add a new class to listen
 class MyCounter with ChangeNotifier {
   int _counter = 0;
 
@@ -95,3 +98,4 @@ class MyCounter with ChangeNotifier {
     notifyListeners();
   }
 }
+//end listener class
